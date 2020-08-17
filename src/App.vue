@@ -1,32 +1,58 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
+    <headers :seller="seller"></headers>
+    <div class="tab border-bottom">
+      <router-link to="/goods" tag="div">商品</router-link>
+      <router-link to="/ratings" tag="div">评论</router-link>
+      <router-link to="/seller" tag="div">商家</router-link>
     </div>
-    <router-view/>
+    <router-view />
   </div>
 </template>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+<script>
+import { getdata } from "network/axios.js";
+import headers from "./views/header/header";
+const ERR_OK = 0;
+export default {
+  data() {
+    return {
+      seller: {},
+    };
+  },
+  created() {
+    this.data();
+  },
+  methods: {
+    data() {
+      getdata().then((res) => {
+        console.log(res);
+        if (res.data.errno === ERR_OK) {
+          this.seller = res.data.data.seller;
+        }
+      });
+    },
+  },
+  components: {
+    headers,
+  },
+};
+</script>
+<style lang="less" scope>
+.border-bottom {
+  color: rgb(77, 85, 93);
+  border-color: red;
+}
+.tab {
+  display: flex;
+  height: 40px;
+  line-height: 40px;
   text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+  font-size: 14px;
+  div {
+    flex: 1;
+  }
+  .active {
+    color: red;
+  }
 }
 </style>
