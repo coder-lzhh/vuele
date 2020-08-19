@@ -11,7 +11,7 @@
 </template>
 <script>
 import { getdata } from "network/axios.js";
-import headers from "./views/header/header";
+import headers from "components/header/header";
 const ERR_OK = 0;
 export default {
   data() {
@@ -25,9 +25,9 @@ export default {
   methods: {
     data() {
       getdata().then((res) => {
-        console.log(res);
         if (res.data.errno === ERR_OK) {
           this.seller = res.data.data.seller;
+          console.log(this.seller);
         }
       });
     },

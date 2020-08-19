@@ -1,10 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
-
-const goods = () => import('components/goods.vue')
-const ratings = () => import('components/ratings.vue')
-const seller = () => import('components/seller.vue')
+const goods = () => import('components/goods/goods.vue')
+const ratings = () => import('components/ratings/ratings.vue')
+const seller = () => import('components/seller/seller.vue')
 
 Vue.use(VueRouter)
 
