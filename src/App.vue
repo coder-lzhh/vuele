@@ -6,7 +6,9 @@
       <router-link to="/ratings" tag="div">评论</router-link>
       <router-link to="/seller" tag="div">商家</router-link>
     </div>
-    <router-view />
+    <keep-alive>
+      <router-view :seller='seller' />
+    </keep-alive>
   </div>
 </template>
 <script>
@@ -27,7 +29,7 @@ export default {
       getdata().then((res) => {
         if (res.data.errno === ERR_OK) {
           this.seller = res.data.data.seller;
-          console.log(this.seller);
+          // console.log(this.seller);
         }
       });
     },

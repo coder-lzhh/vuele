@@ -2,7 +2,13 @@
   <div class="con">
     <div class="meun" ref="meunIist">
       <div>
-        <div v-for="(item,index) in goods " :key="index" class="meun-item">
+        <div
+          v-for="(item,index) in goods "
+          :key="index"
+          class="meun-item"
+          :class="{act:newIndex==index}"
+          @click="clickMeun(index)"
+        >
           <span v-show="item.type>0" class="icon" :class="classMap[item.type]"></span>
           {{item.name}}
         </div>
@@ -10,13 +16,13 @@
     </div>
     <div class="goods" ref="foodIist">
       <div>
-        <div v-for="(item,index) in goods" :key="index" class="food">
+        <div v-for="(item,index) in goods" :key="index" class="food food-hook" @click="showfood">
           <div class="title">{{item.name}}</div>
           <div v-for="(foodItem,index) in item.foods " :key="index" class="food-item">
             <div class="img">
               <img width="57" height="57" :src="foodItem.icon" alt />
             </div>
-            <div class="content">
+            <div class="content" @click="selectedFood(foodItem)">
               <p>{{foodItem.name}}</p>
               <div class="desc">{{foodItem.description}}</div>
               <div class="sell">
@@ -25,14 +31,16 @@
               </div>
               <div class="price">
                 <span class="nowprice">￥{{foodItem.price}}</span>
-                <!-- <span v-if="foodItem.oldPrice">{{foodItem.oldPrice}}</span> -->
-                <span class="oldprice">￥28</span>
+                <span class="oldprice" v-if="foodItem.oldPrice">￥{{foodItem.oldPrice}}</span>
               </div>
+              <cartcontrol @add="addfood" :food="foodItem" class="cartcontrol"></cartcontrol>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <shopcart ref="shopcart" :selectfood="selectCart"></shopcart>
+    <food ref="food" :selectFood="selectFood" @add="addfood"></food>
   </div>
 </template>
 
@@ -40,36 +48,117 @@
 import { getdata } from "network/axios.js";
 import BSroll from "better-scroll";
 
+import shopcart from "../shopcart/shopcart";
+import cartcontrol from "../cartcontrol/cartcontrol";
+import food from "../food/food";
 const ERR_OK = 0;
 export default {
   name: "goods",
-  components: {},
+  components: { shopcart, cartcontrol, food },
   props: {},
   data() {
     return {
       goods: [],
       classMap: ["decrease", "discount", "special", "invoice", "guarantee"],
+      listHeight: [],
+      positonY: 0,
+      selectFood: {},
     };
   },
   created() {
     this.data();
-    this.$nextTick(() => {
-      this.initBS();
-    });
   },
-  computed: {},
+  computed: {
+    newIndex() {
+      for (let i = 0; i < this.listHeight.length; i++) {
+        if (
+          this.positonY >= this.listHeight[i] &&
+          this.positonY < this.listHeight[i + 1]
+        ) {
+          return i;
+        }
+      }
+    },
+    selectCart() {
+      let foods = [];
+      // console.log(this.goods)
+      for (let i of this.goods) {
+        // console.log(i);
+        for (let k of i.foods) {
+          if (k.count) {
+            foods.push(k);
+          }
+        }
+      }
+      return foods;
+    },
+
+    // let foods = [];
+    // this.goods.forEach((good) => {
+    //   good.foods.forEach((food) => {
+    //     if (food.count) {
+    //       foods.push(food);
+    //     }
+    //   });
+    // });
+    // return foods;
+    // },
+  },
   methods: {
+    selectedFood(fooditem) {
+      this.selectFood = fooditem;
+    },
+    showfood() {
+      this.$refs.food.foodShow();
+    },
     data() {
       getdata().then((res) => {
         if (res.data.errno === ERR_OK) {
           this.goods = res.data.data.goods;
-          console.log(this.goods);
+          this.$nextTick(() => {
+            this.initBS();
+            this.calcHeight();
+          });
         }
       });
     },
     initBS() {
-      this.meunIist = new BSroll(this.$refs.meunIist, {});
-      this.foodIist = new BSroll(this.$refs.foodIist, {});
+      this.meunIist = new BSroll(this.$refs.meunIist, {
+        click: true,
+      });
+      this.foodIist = new BSroll(this.$refs.foodIist, {
+        click: true,
+        probeType: 3,
+      });
+
+      this.foodIist.on("scroll", (positon) => {
+        if (this.time) {
+          clearTimeout(this.time);
+        }
+        this.time = setTimeout(() => {
+          this.positonY = Math.abs(positon.y);
+          console.log("object");
+        }, 17);
+      });
+    },
+    calcHeight() {
+      let foodHeight = this.$refs.foodIist.getElementsByClassName("food-hook");
+      let height = 0;
+      this.listHeight.push(height);
+      for (let i = 0; i < foodHeight.length; i++) {
+        height += foodHeight[i].clientHeight;
+        this.listHeight.push(height);
+      }
+    },
+    clickMeun(index) {
+      let foodHeight = this.$refs.foodIist.getElementsByClassName("food-hook");
+      // console.log(index);
+      let el = foodHeight[index];
+      this.foodIist.scrollToElement(el, 300);
+    },
+    addfood(el) {
+      // console.log(el);
+      this.$refs.shopcart.drop(el);
     },
   },
   watch: {},
@@ -82,7 +171,7 @@ export default {
   position: absolute;
   // z-index: -1;
   top: 174px;
-  bottom: 64px;
+  bottom: 48px;
   width: 100%;
   display: flex;
   overflow: hidden;
@@ -99,6 +188,9 @@ export default {
       font-size: 12px;
       display: flex;
       align-items: center;
+      &.act {
+        background: white;
+      }
       .icon {
         display: inline-block;
         min-width: 12px;
@@ -143,6 +235,7 @@ export default {
         padding-bottom: 18px;
         display: flex;
         margin: 18px;
+
         &:last-child {
           margin-bottom: 0;
           .border-none();
@@ -153,6 +246,7 @@ export default {
         }
         .content {
           flex: 1;
+          position: relative;
           p {
             padding-top: 2px;
             font-size: 14px;
@@ -190,6 +284,12 @@ export default {
               line-height: 10px;
               color: rgb(147, 153, 159);
             }
+          }
+          .cartcontrol {
+            position: absolute;
+            z-index: 1;
+            bottom: 0;
+            right: 0;
           }
         }
       }
